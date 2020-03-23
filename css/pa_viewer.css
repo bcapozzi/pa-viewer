@@ -1,0 +1,9 @@
+.personOption {
+  float: left;
+  border: 1px;
+  border-color: blue;
+  border-style: solid;
+  height: 60px;
+  vertical-align: middle;
+  position: relative;
+}
