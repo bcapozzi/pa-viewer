@@ -5148,15 +5148,15 @@ var $lovasoa$elm_csv$Csv$Csv = F2(
 	function (headers, records) {
 		return {headers: headers, records: records};
 	});
-var $author$project$Main$Model = F5(
-	function (csvFile, csvData, personSelected, personOptions, personToFocusOn) {
-		return {csvData: csvData, csvFile: csvFile, personOptions: personOptions, personSelected: personSelected, personToFocusOn: personToFocusOn};
+var $author$project$Main$Model = F6(
+	function (csvFile, csvData, personSelected, personOptions, personToFocusOn, jobsForPerson) {
+		return {csvData: csvData, csvFile: csvFile, jobsForPerson: jobsForPerson, personOptions: personOptions, personSelected: personSelected, personToFocusOn: personToFocusOn};
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		A5(
+		A6(
 			$author$project$Main$Model,
 			$elm$core$Maybe$Nothing,
 			A2(
@@ -5166,7 +5166,8 @@ var $author$project$Main$init = function (_v0) {
 					[_List_Nil])),
 			'',
 			_List_Nil,
-			''),
+			'',
+			_List_Nil),
 		$elm$core$Platform$Cmd$none);
 };
 var $author$project$Main$CSVParse = function (a) {
@@ -5215,6 +5216,64 @@ var $elm$core$List$drop = F2(
 			}
 		}
 	});
+var $author$project$Main$extractName = function (record) {
+	var temp1 = A2($elm$core$List$drop, 2, record);
+	if (temp1.b) {
+		var first = temp1.a;
+		var rest = temp1.b;
+		return first;
+	} else {
+		return '';
+	}
+};
+var $author$project$Main$Role = F2(
+	function (year, title) {
+		return {title: title, year: year};
+	});
+var $author$project$Main$extractRole = function (record) {
+	if (record.b) {
+		var first = record.a;
+		var rest = record.b;
+		var year = first;
+		if (rest.b) {
+			var first2 = rest.a;
+			var rest2 = rest.b;
+			return A2($author$project$Main$Role, year, first2);
+		} else {
+			return A2($author$project$Main$Role, '-1', 'UNDEFINDED');
+		}
+	} else {
+		return A2($author$project$Main$Role, '-1', 'UNDEFINDED');
+	}
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $author$project$Main$findJobsFor = F2(
+	function (name, data) {
+		var recordsForPerson = A2(
+			$elm$core$List$filter,
+			function (x) {
+				return _Utils_eq(
+					$author$project$Main$extractName(x),
+					name);
+			},
+			data.records);
+		return A2(
+			$elm$core$List$map,
+			function (x) {
+				return $author$project$Main$extractRole(x);
+			},
+			recordsForPerson);
+	});
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -5228,17 +5287,6 @@ var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
 		return g(
 			f(x));
-	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
 	});
 var $elm$core$String$lines = _String_lines;
 var $elm$core$Basics$not = _Basics_not;
@@ -5376,15 +5424,20 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			default:
 				var name = msg.a;
-				return ($elm$core$String$length(model.personToFocusOn) > 0) ? _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{personToFocusOn: ''}),
-					$elm$core$Platform$Cmd$none) : _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{personToFocusOn: name}),
-					$elm$core$Platform$Cmd$none);
+				if ($elm$core$String$length(model.personToFocusOn) > 0) {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{personToFocusOn: ''}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var jobs = A2($author$project$Main$findJobsFor, name, model.csvData);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{jobsForPerson: jobs, personToFocusOn: name}),
+						$elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $author$project$Main$CSVSelected = {$: 'CSVSelected'};
@@ -5512,15 +5565,25 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$extractName = function (record) {
-	var temp1 = A2($elm$core$List$drop, 2, record);
-	if (temp1.b) {
-		var first = temp1.a;
-		var rest = temp1.b;
-		return first;
-	} else {
-		return '';
-	}
+var $author$project$Main$renderJob = function (job) {
+	return A2(
+		$elm$html$Html$h2,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text(job.year + (' ' + job.title))
+			]));
+};
+var $author$project$Main$viewJobsForPerson = function (jobs) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		A2(
+			$elm$core$List$map,
+			function (x) {
+				return $author$project$Main$renderJob(x);
+			},
+			jobs));
 };
 var $elm$core$Set$Set_elm_builtin = function (a) {
 	return {$: 'Set_elm_builtin', a: a};
@@ -5763,7 +5826,8 @@ var $author$project$Main$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(model.personToFocusOn)
-					]))
+					])),
+				$author$project$Main$viewJobsForPerson(model.jobsForPerson)
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(

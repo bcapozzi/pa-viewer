@@ -38,12 +38,19 @@ type alias Model =
     , personSelected : String
     , personOptions : List String
     , personToFocusOn : String
+    , jobsForPerson : List Role
+    }
+
+
+type alias Role =
+    { year : String
+    , title : String
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model Nothing (Csv [] [ [] ]) "" [] "", Cmd.none )
+    ( Model Nothing (Csv [] [ [] ]) "" [] "" [], Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -75,10 +82,56 @@ update msg model =
             if String.length model.personToFocusOn > 0 then
                 ( { model | personToFocusOn = "" }, Cmd.none )
             else
-                ( { model | personToFocusOn = name }, Cmd.none )
+                let
+                    jobs =
+                        findJobsFor name model.csvData
+                in
+                ( { model
+                    | personToFocusOn = name
+                    , jobsForPerson = jobs
+                  }
+                , Cmd.none
+                )
+
+
+findJobsFor : String -> Csv -> List Role
+findJobsFor name data =
+    let
+        recordsForPerson =
+            List.filter (\x -> extractName x == name) data.records
+    in
+    List.map (\x -> extractRole x) recordsForPerson
+
+
+extractRole : List String -> Role
+extractRole record =
+    case record of
+        first :: rest ->
+            let
+                year =
+                    first
+            in
+            case rest of
+                first2 :: rest2 ->
+                    Role year first2
+
+                [] ->
+                    Role "-1" "UNDEFINDED"
+
+        [] ->
+            Role "-1" "UNDEFINDED"
 
 
 
+--        temp1 =
+--            List.drop 1 record
+--    in
+--    case temp1 of
+--        first :: rest ->
+--            first
+--
+--        [] ->
+--            ""
 -- VIEW
 
 
@@ -98,7 +151,17 @@ view model =
         , div [] [ text model.personSelected ]
         , viewPersonOptions model
         , h2 [] [ text model.personToFocusOn ]
+        , viewJobsForPerson model.jobsForPerson
         ]
+
+
+viewJobsForPerson : List Role -> Html Msg
+viewJobsForPerson jobs =
+    div [] (List.map (\x -> renderJob x) jobs)
+
+
+renderJob job =
+    h2 [] [ text (job.year ++ " " ++ job.title) ]
 
 
 viewPersonOptions : Model -> Html Msg
